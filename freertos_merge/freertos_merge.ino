@@ -53,6 +53,7 @@ TaskHandle_t TaskDisplayTemp = NULL;
 TaskHandle_t TaskDisplayString = NULL;
 TaskHandle_t TaskServo = NULL;
 TaskHandle_t TaskBuzzer = NULL;
+TaskHandle_t TaskSerial = NULL;
 
 
 void setup() {
@@ -80,6 +81,7 @@ void setup() {
   xTaskCreate(displayA2String, "TaskDisplayString", 2000, NULL, 1, &TaskDisplayString);
   xTaskCreate(servoA1, "TaskServo", 1000, NULL, 1, &TaskServo);
   xTaskCreate(buzzerA1, "TaskBuzzer", 1000, NULL, 1, &TaskBuzzer);
+  xTaskCreate(serialReceive, "TaskSerial", 1000, NULL, 1, &TaskSerial);
 }
 
 void loop() {
@@ -89,7 +91,7 @@ void loop() {
 void servoA1(void *pvParameters) {
   (void)pvParameters;
   while (1) {
-    if (comando.charAt(0) == '4') {//verifica o comando recebido
+    if ((comando.charAt(0) == '4') && (comandoFinalizado == true)) {//verifica o comando recebido
       if (!doorOpenned) {//variavel de controle que determina se a porta ta aberta ou fechada, a porta tem que começar fechada pra funcionar
         for (int posDegrees = 0; posDegrees <= 90; posDegrees++) {
           servoMotor.write(posDegrees);
@@ -109,7 +111,7 @@ void servoA1(void *pvParameters) {
       comandoFinalizado = false;
       vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    vTaskDelay(60 / portTICK_PERIOD_MS);
   }
 }
 
@@ -117,7 +119,7 @@ void servoA1(void *pvParameters) {
 void buzzerA1(void *pvParameters) {
   (void)pvParameters;
   while (1) {
-    if (comando.charAt(0) == '5') {//verifica o comando recebido
+    if ((comando.charAt(0) == '5') && (comandoFinalizado == true)) {//verifica o comando recebido
       Serial.print("\nbuzzerA1");
       digitalWrite(pinBuzzerA1, HIGH);
       comando = "";
@@ -125,15 +127,16 @@ void buzzerA1(void *pvParameters) {
       vTaskDelay(750 / portTICK_PERIOD_MS);
       digitalWrite(pinBuzzerA1, LOW);
     }
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    vTaskDelay(60 / portTICK_PERIOD_MS);
   }
 }
 
-// apresenta string no display 2º andar, a string vai só na primeira linha
+// apresenta string no display 2º andar
 void displayA2String(void *pvParameters) {
   (void)pvParameters;
   while (1) {
-    if (comando.charAt(0) == '3') {//verifica o comando recebido
+    if ((comando.charAt(0) == '3') && (comandoFinalizado == true)) {//verifica o comando recebido
+      unsigned long startTime = millis();
       Serial.print("\nDisplayA2String");
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -164,9 +167,11 @@ void displayA2String(void *pvParameters) {
       lcd.print("");
       comando = "";
       comandoFinalizado = false;
+      unsigned long endTime = millis();
+      Serial.print((endTime-startTime));
       vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    vTaskDelay(60 / portTICK_PERIOD_MS);
   }
 }
 
@@ -174,7 +179,7 @@ void displayA2String(void *pvParameters) {
 void displayA2temp(void *pvParameters) {
   (void)pvParameters;
   while (1) {
-    if (comando.charAt(0) == '2') {//verifica o comando recebido
+    if ((comando.charAt(0) == '2') && (comandoFinalizado == true)) {//verifica o comando recebido
       Serial.print("\nDisplayA2Temp");
       lcd.clear();
       lcd.setCursor(0, 1);
@@ -187,7 +192,7 @@ void displayA2temp(void *pvParameters) {
       comandoFinalizado = false;
       vTaskDelay(2500 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    vTaskDelay(60 / portTICK_PERIOD_MS);
   }
 }
 
@@ -208,14 +213,14 @@ void lm35A2read(void *pvParameters) {
 void toggleFanA3(void *pvParameters) {
   (void)pvParameters;
   while (1) {
-    if (comando.charAt(0) == '1') {//verifica o comando recebido
+    if ((comando.charAt(0) == '1') && (comandoFinalizado == true)) {//verifica o comando recebido
       digitalWrite(pinFanA3, !digitalRead(pinFanA3));
       Serial.println("\ntoggleFanA3");
       comando = "";
       comandoFinalizado = false;
       vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    vTaskDelay(60 / portTICK_PERIOD_MS);
   }
 }
 
@@ -223,23 +228,39 @@ void toggleFanA3(void *pvParameters) {
 void toggleLedA3(void *pvParameters) {
   (void)pvParameters;
   while (1) {
-    if (comando.charAt(0) == '0') {//verifica o comando recebido
+    if ((comando.charAt(0) == '0') && (comandoFinalizado == true)) {//verifica o comando recebido
       digitalWrite(pinLedA3, !digitalRead(pinLedA3));
       Serial.println("\ntoggleLedA3");
       comando = "";
       comandoFinalizado = false;
       vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    vTaskDelay(60 / portTICK_PERIOD_MS);
   }
 }
 
-void serialEvent() {
-  while (Serial.available()) {
-    char inChar = (char)Serial.read();
-    comando += inChar;
-    if (inChar == '\n') {
-      comandoFinalizado = true;
+//aparenta functionar
+// void serialEvent() {
+//   while (Serial.available()) {
+//     char inChar = (char)Serial.read();
+//     comando += inChar;
+//     if (inChar == '\n') {
+//       comandoFinalizado = true;
+//     }
+//   }
+// }
+
+//já que serialEvent não é por interrupt, talvez essa sejá uma solução melhor
+void serialReceive(void *pvParameters) {
+  (void)pvParameters;
+  while (1) {
+    if (Serial.available()){
+      char inChar = (char)Serial.read();
+      comando += inChar;
+      if (inChar == '\n') {
+        comandoFinalizado = true;
+      }
     }
+    vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
