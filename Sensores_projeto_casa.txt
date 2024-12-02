@@ -1,0 +1,52 @@
+14 pinos IO(esse numero parace estar errado)
+6 atuadores(2 por andar)
+
+led
+	andar 3
+	1 pino saida
+	pino GPIO15
+	1 resitor de 1k no positivo
+	
+fan
+	andar 3
+	1 pino saida + alimentação
+	relé
+	fonte 12v
+	pino GPIO2
+	
+Display	i2c
+	andar 2
+	2 pinos de saida + alimentação
+	https://randomnerdtutorials.com/esp32-esp8266-i2c-lcd-arduino-ide/
+	interface extra
+	pinos 33(GPIO21) e 36(GPIO22)
+	Biblioteca CystalI2C
+	
+	
+LM35
+	andar 2
+	1 pino de entrada + alimentação
+	https://randomnerdtutorials.com/esp32-ds18b20-temperature-arduino-ide/
+	pino 7(GPIO35)
+	PRESTAR ATENÇÃO NA ALIMENTAÇÃO
+	PINAGEM É DE BOTTOM VIEW NO DATASHEET
+	
+Servo motor
+	andar 3
+	1 pino de saida + alimentação
+	https://randomnerdtutorials.com/esp32-servo-motor-web-server-arduino-ide/
+	Imprimir porta na impressora 3D
+	Bilbioteca ESP32Servo
+	pino 15(GPIO13)
+	http://www.ee.ic.ac.uk/pcheung/teaching/DE1_EE/stores/sg90_datasheet.pdf
+	
+Buzzer passivo
+	andar 1
+	1 pino de saida + GND
+	resitor de 100 no GND 
+	pino 30(GPIO18)
+	
+	
+7 pinos
+	
+	
